@@ -1,1 +1,1 @@
-print("Saodat is changed her code")
+print("Saodat changed her code")

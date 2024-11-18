@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishBuster</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='design.css') }}">
+</head>
+
+<body>
+    <h1>Check Your Link</h1>
+    <form action="/check" method = "post">
+        <input type="text" id="url-input" name="url" placeholder="Enter the URL here">
+        <button type="submit" id="check-button">Check</button>
+
+    </form>
+
+    {% if result %}
+    <div id="result">{{ result }}</div>
+    {% endif %}
+
+</body>
+</html>
+
+
+
+
+
+
+

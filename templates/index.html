@@ -3,28 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PhishBuster</title>
+    <title>Phishbuster</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='design.css') }}">
 </head>
-
 <body>
-    <h1>Check Your Link</h1>
-    <form action="/check" method = "post">
-        <input type="text" id="url-input" name="url" placeholder="Enter the URL here">
-        <button type="submit" id="check-button">Check</button>
-
-    </form>
-
-    {% if result %}
-    <div id="result">{{ result }}</div>
-    {% endif %}
-
+    <div class="container">
+        <h1>Phishbuster</h1>
+        <p>Enter a link to check its safety:</p>
+        <form id="link-form">
+            <input type="text" id="link-input" placeholder="Enter a URL (e.g., https://example.com)" required>
+            <button type="submit">Check Link</button>
+        </form>
+        <div id="result" class="result"></div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
-
-
-
-
-
-
-

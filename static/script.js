@@ -16,14 +16,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const result = await response.json();
 
-        if (result.status === 'safe') {
-            resultDiv.style.color = 'green';
-        } else if (result.status === 'warning') {
-            resultDiv.style.color = 'orange';
+        let message = result.message;
+
+
+        // Display SSL status
+        if (result.ssl_valid === true) {
+            message += " ✅ SSL Certificate is valid.";
+        } else if (result.ssl_valid === false) {
+            message += " ❌ SSL Certificate is NOT valid.";
         } else {
-            resultDiv.style.color = 'red';
+            message += " ⚠️ SSL status could not be determined.";
         }
 
-        resultDiv.textContent = result.message;
+        // Display domain age
+        if (result.domain_age !== null) {
+            message += ` 🌍 Domain age: ${result.domain_age} years.`;
+        } else {
+            message += " ⚠️ Unable to retrieve domain age.";
+        }
+
+        resultDiv.style.color = result.status === "safe" ? "green" : "orange";
+        resultDiv.textContent = message;
     });
 });

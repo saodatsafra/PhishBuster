@@ -15,7 +15,12 @@
             <input type="text" id="link-input" placeholder="Enter a URL (e.g., https://example.com)" required>
             <button type="submit">Check Link</button>
         </form>
-        <div id="result" class="result"></div>
+
+        <div id="result" class="result">
+            <h2 id="main-status"></h2>
+         <p id="details"></p>
+        </div>
+
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>

@@ -54,28 +54,53 @@ def check_link():
     link = data.get('link', '')
     link = link.lower().strip()
 
-    #Validate link format
-    if not re.match(r'^(http|https)://', link):
+    if not re.match(r'^(http|https)://', link):     #Validate link format
         return jsonify({
             "status": "error",
             "message": "Invalid URL format. Please provide a valid link."
         })
 
-
-###This is the part where your app checks the link the user typed in and builds a response to send back to the browser
     is_https = link.startswith('https://')                  # Check if the link uses HTTPS.
     ssl_status = check_ssl_certificate(link)                # Check ssl certificate
     domain_age = get_domain_age(link)                       # Get domain age, how old(years)
+    suspicious_keywords = ['login', 'verify', 'update', 'free', 'gift', 'security']
+    keyword_hits = [word for word in suspicious_keywords if word in link]
+    is_young = domain_age is not None and domain_age < 1
+    is_ip = re.match(r'^https?://\d{1,3}(\.\d{1,3}){3}', link) is not None
 
-    response = {                                            # Creates a dictionary with all the results and prepare response :
-        "status": "safe" if is_https else "warning",
+    #SCORING ALGORITHM
+    score = 0
+    if is_https:
+        score += 1
+    if ssl_status:
+        score += 1
+    if not is_young:
+        score += 2
+    if not keyword_hits:
+        score += 2
+    if not is_ip:
+        score += 2
+
+    if score == 8:
+        print("Safe")
+    elif 4 <= score <= 7:
+        print("Might not be safe")
+    else:
+        print("Dangerous")
+
+
+    # Creates a dictionary with all the results and prepare response :
+    response = {
+        "status": "safe" if score == 8 else "might not be safe" if  4 <= score <= 7 else "dangerous",
         "message": "The link is using HTTPS, which is generally secure." if is_https else "The link is using HTTP, which is not secure.",
         "ssl_valid": ssl_status,
-        "domain_age": domain_age
+        "domain_age": domain_age,
+        "keywords_found": keyword_hits,
+        "young_domain": is_young,
+        "is_ip_address": is_ip,
+        "score": score,
     }
-
     return jsonify(response)  #sends the results back to the browser in a js format
-
 
 
 

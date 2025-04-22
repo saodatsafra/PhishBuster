@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('link-form');
     const resultDiv = document.getElementById('result');
+    const statusHeader = document.getElementById('main-status');
+    const detailsPara = document.getElementById('details');
 
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
@@ -16,26 +18,55 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const result = await response.json();
 
-        let message = result.message;
+        // Set main status message and color
+        if (result.status === "safe") {
+            statusHeader.textContent = "The link is safe!";
+            statusHeader.style.color = "green";
+        } else if (result.status === "might not be safe") {
+            statusHeader.textContent = "The link might not be safe!";
+            statusHeader.style.color = "orange";
+        } else {
+            statusHeader.textContent = "The link is dangerous!";
+            statusHeader.style.color = "red";
+        }
 
+        // Build details message
+        let details = "";
+        details += result.message + "<br>";
 
-        // Display SSL status
         if (result.ssl_valid === true) {
-            message += " ✅ SSL Certificate is valid.";
+            details += "✅ SSL Certificate is valid.<br>";
         } else if (result.ssl_valid === false) {
-            message += " ❌ SSL Certificate is NOT valid.";
+            details += "❌ SSL Certificate is NOT valid.<br>";
         } else {
-            message += " ⚠️ SSL status could not be determined.";
+            details += "⚠️ SSL status could not be determined.<br>";
         }
 
-        // Display domain age
         if (result.domain_age !== null) {
-            message += ` 🌍 Domain age: ${result.domain_age} years.`;
+            details += `🌍 Domain age: ${result.domain_age} years.<br>`;
         } else {
-            message += " ⚠️ Unable to retrieve domain age.";
+            details += "⚠️ Unable to retrieve domain age.<br>";
         }
 
-        resultDiv.style.color = result.status === "safe" ? "green" : "orange";
-        resultDiv.textContent = message;
+        if (result.young_domain === true) {
+            details += "🚨 Domain is very new — might be suspicious.<br>";
+        }
+
+        if (result.keywords_found && result.keywords_found.length > 0) {
+            details += `🚩 Suspicious keywords in link: ${result.keywords_found.join(', ')}.<br>`;
+        } else {
+            details += "✅ No suspicious keywords found in the link.<br>";
+        }
+
+        if (result.is_ip_address) {
+            details += "⚠️ Link uses an IP address instead of a domain — might be suspicious.<br>";
+        } else {
+            details += "✅ The link uses a normal domain name (not an IP).<br>";
+        }
+
+        details += `🧮 Final Score: ${result.score}/8`;
+
+        // Display all messages
+        detailsPara.innerHTML = details;
     });
 });

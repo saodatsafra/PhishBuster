@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phishbuster</title>
+    <title>PhishBuster</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,600&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='design.css') }}">
 </head>
 <body>
-
     <div class="container">
         <h1>PhishBuster</h1>
         <p>Enter a link to check its safety:</p>
@@ -16,15 +16,20 @@
             <button type="submit">Check Link</button>
         </form>
 
-        <div id="result" class="result">
-            <h2 id="main-status"></h2>
-         <p id="details"></p>
+        <!-- Spinner -->
+        <div id="spinner" style="display: none; margin: 20px;">
+            <div class="loader"></div>
+            <div>Checking...</div>
+        </div>
+
+        <!-- Result Card -->
+        <div id="result" class="result card" style="display: none;">
+            <h2 id="main-status"><span id="main-icon"></span></h2>
+            <p id="details"></p>
         </div>
 
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-
 </body>
 </html>
-

@@ -16,7 +16,7 @@ def index():
 #--------------CHECK SSL/TLS VALIDATY---------------#
 def check_ssl_certificate(url):
     try:
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, timeout=3)
         return True   #SSL is valid
     except requests.exceptions.SSLError as e: #as e --> If an error happens, save the error message in a variable called e.
         print(f"SSL error: {e}")
@@ -54,13 +54,20 @@ def check_link():
     link = data.get('link', '')
     link = link.lower().strip()
 
-    if not re.match(r'^(http|https)://', link):     #Validate link format
+
+    if not (re.match(r'^(http|https)://', link) or re.match(r'^www\.', link)):
         return jsonify({
             "status": "error",
-            "message": "Invalid URL format. Please provide a valid link."
+            "message": "⚠️ Invalid URL format. Please provide a valid link."
         })
 
-    is_https = link.startswith('https://')                  # Check if the link uses HTTPS.
+
+    is_https = link.startswith('https://')
+    is_http = link.startswith('http://')
+    is_www_only = link.startswith('www.')
+    is_www_protocol = '://www.' in link
+
+
     ssl_status = check_ssl_certificate(link)                # Check ssl certificate
     domain_age = get_domain_age(link)                       # Get domain age, how old(years)
     suspicious_keywords = ['login', 'verify', 'update', 'free', 'gift', 'security']
@@ -72,6 +79,8 @@ def check_link():
     score = 0
     if is_https:
         score += 1
+    if is_www_only:
+        score -= 2
     if ssl_status:
         score += 1
     if not is_young:
@@ -88,11 +97,22 @@ def check_link():
     else:
         print("Dangerous")
 
+#new logic
+    if is_https:
+        message = "✅ The link is using HTTPS, which is generally secure."
+    elif is_http:
+        message = "⚠️ The link is using HTTP, which is not secure."
+    elif is_www_only:
+        message = "⚠️ The link is missing http or https. It starts with 'www.' — this is less trustworthy."
+    else:
+        message = "⚠️ The link is missing a protocol. Please use a full URL."
 
-    # Creates a dictionary with all the results and prepare response :
+    #response dictionary:
     response = {
         "status": "safe" if score == 8 else "might not be safe" if  4 <= score <= 7 else "dangerous",
-        "message": "The link is using HTTPS, which is generally secure." if is_https else "The link is using HTTP, which is not secure.",
+        "message": message,
+        "is_www_only": is_www_only,
+        "is_www_protocol": is_www_protocol,
         "ssl_valid": ssl_status,
         "domain_age": domain_age,
         "keywords_found": keyword_hits,

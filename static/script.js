@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
         event.preventDefault();
 
         spinner.style.display = "block";
-        resultDiv.style.display = "none"; // Hide the card while checking
+        resultDiv.style.display = "none";
         statusHeader.textContent = "";
         mainIcon.textContent = "";
         detailsPara.innerHTML = "";
@@ -27,11 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const result = await response.json();
         spinner.style.display = "none";
-
-        // Show the card now that we have results!
         resultDiv.style.display = "block";
 
-        // (rest of your code follows as before)
+        // Set main status and icon
         if (result.status === "safe") {
             statusHeader.textContent = "The link is safe!";
             statusHeader.style.color = "green";
@@ -46,41 +44,65 @@ document.addEventListener('DOMContentLoaded', function() {
             mainIcon.textContent = "🔴";
         }
 
+        // Friendly details for the user
         let details = "";
-        details += result.message + "<br>";
 
-        if (result.is_www_protocol) {
-            details += "ℹ️ The link uses 'www.' with a valid protocol. This is normal for many safe websites.<br>";
+        // Main message based on status
+        if (result.status === "safe") {
+            details += "🎉 This link looks safe.<br>";
+        } else if (result.status === "might not be safe") {
+            details += "⚠️ Please be careful. Some things look suspicious.<br>";
+        } else {
+            details += "🚨 This link is dangerous. Do NOT enter personal information.<br>";
         }
-        if (!result.is_www_only && (link.startsWith("http://") || link.startsWith("https://"))) {
-            details += "✅ The link uses a standard protocol (http or https).<br>";
+
+        // HTTPS/HTTP info
+        if (result.is_https) {
+            details += "✅ Secure connection (HTTPS).<br>";
+        } else if (result.is_http) {
+            details += "❌ Not secure (HTTP).<br>";
         }
+
+        // SSL certificate
         if (result.ssl_valid === true) {
-            details += "✅ SSL Certificate is valid.<br>";
+            details += "✅ SSL certificate is valid.<br>";
         } else if (result.ssl_valid === false) {
-            details += "❌ SSL Certificate is NOT valid.<br>";
+            details += "❌ SSL certificate is NOT valid.<br>";
         } else {
-            details += "⚠️ SSL status could not be determined.<br>";
+            details += "⚠️ Couldn't check the site's security certificate.<br>";
         }
+
+        // Domain age
         if (result.domain_age !== null) {
-            details += `🌍 Domain age: ${result.domain_age} years.<br>`;
+            if (result.young_domain) {
+                details += "🚨 This website is very new. Be extra careful.<br>";
+            } else {
+                details += `🌍 Website age: ${result.domain_age} years. Older sites are usually safer.<br>`;
+            }
         } else {
-            details += "⚠️ Unable to retrieve domain age.<br>";
+            details += "⚠️ Can't find out how old this site is.<br>";
         }
-        if (result.young_domain === true) {
-            details += "🚨 Domain is very new — might be suspicious.<br>";
-        }
+
+        // Suspicious keywords
         if (result.keywords_found && result.keywords_found.length > 0) {
-            details += `🚩 Suspicious keywords in link: ${result.keywords_found.join(', ')}.<br>`;
+            details += `🚩 Suspicious words found: ${result.keywords_found.join(', ')}.<br>`;
         } else {
-            details += "✅ No suspicious keywords found in the link.<br>";
+            details += "✅ No suspicious words found in the link.<br>";
         }
+
+        // IP address check
         if (result.is_ip_address) {
-            details += "⚠️ Link uses an IP address instead of a domain — might be suspicious.<br>";
+            details += "⚠️ This link uses numbers instead of a name. Be extra careful.<br>";
         } else {
-            details += "✅ The link uses a normal domain name (not an IP).<br>";
+            details += "✅ This link uses a normal website name.<br>";
         }
-        details += `🧮 Final Score: ${result.score}/8`;
+
+        // 'www.' with or without protocol
+        if (result.is_www_only) {
+            details += "⚠️ Link is missing 'http' or 'https'.<br>";
+        } else if (result.is_www_protocol) {
+            details += "ℹ️ This link uses 'www.' which is normal for many sites.<br>";
+        }
 
         detailsPara.innerHTML = details;
     });

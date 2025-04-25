@@ -79,23 +79,41 @@ def check_link():
     score = 0
     if is_https:
         score += 1
-    if is_www_only:
+    else:
         score -= 2
+
     if ssl_status:
-        score += 1
-    if not is_young:
         score += 2
+    elif ssl_status is False:
+        score -= 2
+
+    if domain_age is not None:
+        if domain_age < 1:
+            score -= 2
+        elif domain_age >= 1:
+            score += 2
+    else:
+        score -= 1 #cannt determine
+
+    score -= 2* min(len(keyword_hits), 2) #up to -4
     if not keyword_hits:
         score += 2
-    if not is_ip:
-        score += 2
 
-    if score == 8:
-        print("Safe")
-    elif 4 <= score <= 7:
-        print("Might not be safe")
+    if is_ip:
+        score -= 3
+
+    if is_www_only:
+        score -= 2
+
+    if is_www_protocol:
+        score += 1
+
+    if score >= 4:
+        status = "safe"
+    elif 0 <= score < 4:
+        status = "might not be safe"
     else:
-        print("Dangerous")
+        status = "dangerous"
 
 #new logic
     if is_https:
@@ -109,10 +127,12 @@ def check_link():
 
     #response dictionary:
     response = {
-        "status": "safe" if score == 8 else "might not be safe" if  4 <= score <= 7 else "dangerous",
+        "status": "safe" if score >= 4 else "might not be safe" if  0 <= score < 4 else "dangerous",
         "message": message,
         "is_www_only": is_www_only,
         "is_www_protocol": is_www_protocol,
+        "is_https": is_https,
+        "is_http": is_http,
         "ssl_valid": ssl_status,
         "domain_age": domain_age,
         "keywords_found": keyword_hits,

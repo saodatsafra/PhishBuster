@@ -23,3 +23,5 @@ urllib3==2.1.0
 Werkzeug==3.0.4
 whois==1.20240129.2
 zope.interface==5.5.1
+gunicorn
+

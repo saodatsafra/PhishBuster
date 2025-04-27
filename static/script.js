@@ -5,12 +5,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusHeader = document.getElementById('main-status');
     const mainIcon = document.getElementById('main-icon');
     const detailsPara = document.getElementById('details');
-    const riskBar = document.getElementById('risk-bar');
-    const riskPctNum = document.getElementById('risk-pct-num');
+    let riskBar = document.getElementById('risk-bar');
+
+    if (!riskBar) {
+        riskBar = document.createElement('div');
+        riskBar.id = 'risk-bar';
+        riskBar.style.height = '18px';
+        riskBar.style.width = '100%';
+        riskBar.style.margin = '12px 0 16px 0';
+        riskBar.style.borderRadius = '5px';
+        riskBar.style.display = 'none';
+        riskBar.style.position = 'relative';
+        resultDiv.insertBefore(riskBar, detailsPara);
+    }
 
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
-
         spinner.style.display = "block";
         resultDiv.style.display = "none";
         statusHeader.textContent = "";
@@ -18,15 +28,11 @@ document.addEventListener('DOMContentLoaded', function() {
         detailsPara.innerHTML = "";
         riskBar.style.display = "none";
         riskBar.innerHTML = "";
-        riskPctNum.textContent = "";
 
         const link = document.getElementById('link-input').value;
-
         const response = await fetch('/check_link', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json', },
             body: JSON.stringify({ link }),
         });
 
@@ -34,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
         spinner.style.display = "none";
         resultDiv.style.display = "block";
 
-        // Show error for bad links
+        // --- Error Case ---
         if (result.status === "error") {
             statusHeader.textContent = "Invalid link";
             statusHeader.style.color = "red";
@@ -42,130 +48,101 @@ document.addEventListener('DOMContentLoaded', function() {
             detailsPara.innerHTML = result.message + "<br>Please provide the full link, like https://example.com";
             riskBar.style.display = "none";
             riskBar.innerHTML = "";
-            riskPctNum.textContent = "";
             return;
         }
 
-        // Set main status, icon, and color
+        // --- Top Bar/Status ---
         if (result.status === "safe") {
-            statusHeader.textContent = "The link is safe!";
-            statusHeader.style.color = "green";
+            statusHeader.textContent = "SAFE: No major phishing signs detected.";
+            statusHeader.style.color = "#15803d";
             mainIcon.textContent = "🟢";
         } else if (result.status === "caution") {
-            statusHeader.textContent = "The link may not be safe!";
-            statusHeader.style.color = "orange";
+            statusHeader.textContent = "CAUTION: Potential risk factors detected!";
+            statusHeader.style.color = "#eab308";
             mainIcon.textContent = "🟠";
         } else {
-            statusHeader.textContent = "The link is dangerous!";
-            statusHeader.style.color = "red";
+            statusHeader.textContent = "DANGEROUS: Multiple high-risk features detected!";
+            statusHeader.style.color = "#dc2626";
             mainIcon.textContent = "🔴";
         }
 
-        // Visual risk bar and show percentage
+        // --- Risk Bar ---
         riskBar.style.display = "block";
         const pct = Math.min(Math.max(result.risk_pct, 0), 100); // clamp 0-100
         let barColor = "#19c37d"; // green
         if (pct >= 70) barColor = "#ff4545";
         else if (pct >= 25) barColor = "#ffc107";
         riskBar.style.background = `linear-gradient(to right, ${barColor} ${pct}%, #e2e6ea ${pct}%)`;
-        riskBar.innerHTML = ""; // Clear any text inside the bar
-        riskPctNum.textContent = pct + "%";
-        riskPctNum.style.color = barColor;
+        riskBar.innerHTML = `<span style="
+            font-weight: bold;
+            font-size: 15px;
+            color: ${barColor};
+            padding-left: 7px;
+            position: absolute;
+            left: 7px;
+            top: 0;
+            line-height: 18px;
+        ">${pct}% Risk Score</span>`;
 
-        // Build details for the user
-        let details = "";
-
-        // Main message
+        // --- Section 1: Technical Summary ---
+        let details = `<div style="font-size:1.08em; margin-bottom:11px;"><b>Technical Analysis Summary:</b> `;
         if (result.status === "safe") {
-            details += "🎉 This link looks safe.<br>";
+            details += "No significant phishing indicators detected. Link appears to be low risk based on analyzed factors.";
         } else if (result.status === "caution") {
-            details += "⚠️ Please be careful. Some things look suspicious.<br>";
+            details += "Some technical indicators suggest potential risk. Review technical details below.";
         } else {
-            details += "🚨 This link is dangerous. Do NOT enter personal information.<br>";
+            details += "Severe risk factors present! Treat this link as highly suspicious. Avoid entering credentials.";
         }
+        details += "</div>";
 
-        // Show reasons for score
+        // --- Section 2: Ordered Risk Factors ---
         if (result.reasons && result.reasons.length > 0) {
-            details += "<ul style='color:#b22222;'>";
+            details += `<div style="margin-bottom:11px;">
+            <b>Detected Risk Factors:</b>
+            <ul style="color:#b22222; margin-top:5px;">`;
             for (const reason of result.reasons) {
                 details += `<li>${reason}</li>`;
             }
-            details += "</ul>";
+            details += "</ul></div>";
         }
 
-        // HTTPS/HTTP info
-        if (result.is_https) {
-            details += "✅ Secure connection (HTTPS).<br>";
-        } else if (result.is_http) {
-            details += "❌ Not secure (HTTP).<br>";
-        }
-
-        // SSL certificate
-        if (result.ssl_valid === true) {
-            details += "✅ SSL certificate is valid.<br>";
-        } else if (result.ssl_valid === false) {
-            details += "❌ SSL certificate is NOT valid.<br>";
-        } else {
-            details += "⚠️ Couldn't check the site's security certificate.<br>";
-        }
-
-        // Domain age
+        // --- Section 3: Technical Scan Details ---
+        details += `<div style="margin-bottom:11px;"><b>Technical Scan Details:</b><ul>`;
+        details += `<li>Protocol: ${result.is_https ? "HTTPS (encrypted)" : result.is_http ? "HTTP (unencrypted)" : "Unknown"}</li>`;
+        details += `<li>SSL Certificate: ${result.ssl_valid === true ? "Valid" : result.ssl_valid === false ? "Invalid/Failed" : "Not checked"}</li>`;
         if (result.domain_age !== null) {
-            if (result.young_domain) {
-                details += "🚨 This website is very new. Be extra careful.<br>";
-            } else {
-                details += `🌍 Website age: ${result.domain_age} years. Older sites are usually safer.<br>`;
-            }
+            details += `<li>Domain Age: ${result.domain_age} year(s)</li>`;
+            if (result.young_domain) details += `<li><b>Warning:</b> Domain is less than 1 year old</li>`;
         } else {
-            details += "⚠️ Can't find out how old this site is.<br>";
+            details += `<li>Domain Age: Unknown</li>`;
         }
-
-        // Suspicious keywords
         if (result.keywords_found && result.keywords_found.length > 0) {
-            details += `🚩 Suspicious words found: ${result.keywords_found.join(', ')}.<br>`;
-        } else {
-            details += "✅ No suspicious words found in the link.<br>";
+            details += `<li>Suspicious Keywords: <b>${result.keywords_found.join(', ')}</b></li>`;
         }
-
-        // IP address check
         if (result.is_ip_address) {
-            details += "⚠️ This link uses numbers instead of a name. Be extra careful.<br>";
-        } else {
-            details += "✅ This link uses a normal website name.<br>";
+            details += `<li>Domain is a raw IP address (suspicious)</li>`;
         }
-
-        // 'www.' with or without protocol
         if (result.is_www_only) {
-            details += "⚠️ Link is missing 'http' or 'https'.<br>";
-        } else if (result.is_www_protocol) {
-            details += "ℹ️ This link uses 'www.' which is normal for many sites.<br>";
+            details += `<li>Missing protocol (http/https)</li>`;
         }
+        details += `</ul></div>`;
 
-        // ===== WHOIS INFO =====
-        details += "<hr><strong>Domain Registration Info:</strong><br>";
-        if (result.registrar) {
-            details += `🌐 Registrar: ${result.registrar}<br>`;
-        } else {
-            details += "🌐 Registrar: Unknown<br>";
-        }
+        // --- Section 4: Risk Score (Technical Explanation) ---
+        details += `<div style="margin-bottom:12px;">
+            <b>Calculated Risk Percentage:</b> <span style="color:${barColor};font-weight:700;">${pct}%</span><br>
+            <small style="color:#7d8591;">
+                This score is calculated based on the presence of suspicious technical features (see above), including SSL, domain age, protocol, keywords, top-level domain, subdomains, and URL structure.
+            </small>
+        </div>`;
 
-        if (result.country) {
-            details += `🏳️ Country: ${result.country}<br>`;
-        } else {
-            details += "🏳️ Country: Unknown<br>";
-        }
-
-        if (result.creation_date) {
-            details += `📅 Domain Created: ${result.creation_date}<br>`;
-        } else {
-            details += "📅 Domain Created: Unknown<br>";
-        }
-
-        if (result.expiration_date) {
-            details += `⏳ Domain Expires: ${result.expiration_date}<br>`;
-        } else {
-            details += "⏳ Domain Expires: Unknown<br>";
-        }
+        // --- Section 5: WHOIS Registration Info ---
+        details += `<hr><strong>Domain Registration Info:</strong><br>`;
+        details += `<div style="margin-left:7px;line-height:1.9">`;
+        details += `🌐 Registrar: <b>${result.registrar ? result.registrar : "Unknown"}</b><br>`;
+        details += `🏳️ Country: <b>${result.country ? result.country : "Unknown"}</b><br>`;
+        details += `📅 Created: <b>${result.creation_date ? result.creation_date : "Unknown"}</b><br>`;
+        details += `⏳ Expires: <b>${result.expiration_date ? result.expiration_date : "Unknown"}</b><br>`;
+        details += `</div>`;
 
         detailsPara.innerHTML = details;
     });

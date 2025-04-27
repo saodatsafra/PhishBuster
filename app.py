@@ -5,15 +5,13 @@ import whois
 import tldextract
 from datetime import datetime
 
+
 app = Flask(__name__)
-
-#Open homepage
 @app.route('/')
-def index():
-    return render_template('index.html')
+def index(): #homepage
+    return render_template("index.html")
 
 
-#--------------CHECK SSL/TLS VALIDATY---------------#
 def check_ssl_certificate(url):
     try:
         response = requests.get(url, timeout=3)
@@ -25,8 +23,6 @@ def check_ssl_certificate(url):
         print(f"Request error: {e}")
         return None #connection Error
 
-
-#------------------GET DOMAIN AGE----------------------#
 def get_domain_age(url):
     try:
         extracted = tldextract.extract(url)
@@ -46,14 +42,12 @@ def get_domain_age(url):
 
 
 
-
-#------------------MAIN CHECK ROUTE (called by frontend)--------------------#
+#------------------main check route--------------------#
 @app.route('/check_link', methods=['POST'])
 def check_link():
     data = request.get_json()
     link = data.get('link', '')
     link = link.lower().strip()
-
 
     if not (re.match(r'^(http|https)://', link) or re.match(r'^www\.', link)):
         return jsonify({
@@ -61,19 +55,17 @@ def check_link():
             "message": "⚠️ Invalid URL format. Please provide a valid link."
         })
 
-
     is_https = link.startswith('https://')
     is_http = link.startswith('http://')
     is_www_only = link.startswith('www.')
     is_www_protocol = '://www.' in link
-
-
     ssl_status = check_ssl_certificate(link)                # Check ssl certificate
     domain_age = get_domain_age(link)                       # Get domain age, how old(years)
     suspicious_keywords = ['login', 'verify', 'update', 'free', 'gift', 'security']
     keyword_hits = [word for word in suspicious_keywords if word in link]
     is_young = domain_age is not None and domain_age < 1
     is_ip = re.match(r'^https?://\d{1,3}(\.\d{1,3}){3}', link) is not None
+
 
     #SCORING ALGORITHM
     score = 0
@@ -115,7 +107,7 @@ def check_link():
     else:
         status = "dangerous"
 
-#new logic
+
     if is_https:
         message = "✅ The link is using HTTPS, which is generally secure."
     elif is_http:
@@ -146,5 +138,3 @@ def check_link():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-

@@ -47,7 +47,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Friendly details for the user
         let details = "";
 
-        // Main message based on status
+        if (result.status =="error") {
+            statusHeader.textContent = "Invalid link",
+                statusHeader.style.color = "red";
+            mainIcon.textContent = "⚠️",
+                detailsPara.innerHTML = result.message + "<br>Please provide the full link, like https://example.com";
+            return;
+        }
+
+
+        // Main message
         if (result.status === "safe") {
             details += "🎉 This link looks safe.<br>";
         } else if (result.status === "might not be safe") {

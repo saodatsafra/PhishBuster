@@ -25,11 +25,13 @@
         <!-- Result Card -->
         <div id="result" class="result card" style="display: none;">
             <h2 id="main-status"><span id="main-icon"></span></h2>
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 6px;">
+                <div id="risk-bar" style="flex: 1; display: none; min-width:80px;"></div>
+                <span id="risk-pct-num" style="font-size: 1.12em; font-weight: bold;"></span>
+            </div>
             <p id="details"></p>
         </div>
-
     </div>
-
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

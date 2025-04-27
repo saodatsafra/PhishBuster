@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusHeader = document.getElementById('main-status');
     const mainIcon = document.getElementById('main-icon');
     const detailsPara = document.getElementById('details');
+    const riskBar = document.getElementById('risk-bar');
+    const riskPctNum = document.getElementById('risk-pct-num');
 
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
@@ -14,6 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
         statusHeader.textContent = "";
         mainIcon.textContent = "";
         detailsPara.innerHTML = "";
+        riskBar.style.display = "none";
+        riskBar.innerHTML = "";
+        riskPctNum.textContent = "";
 
         const link = document.getElementById('link-input').value;
 
@@ -29,13 +34,25 @@ document.addEventListener('DOMContentLoaded', function() {
         spinner.style.display = "none";
         resultDiv.style.display = "block";
 
-        // Set main status and icon
+        // Show error for bad links
+        if (result.status === "error") {
+            statusHeader.textContent = "Invalid link";
+            statusHeader.style.color = "red";
+            mainIcon.textContent = "⚠️";
+            detailsPara.innerHTML = result.message + "<br>Please provide the full link, like https://example.com";
+            riskBar.style.display = "none";
+            riskBar.innerHTML = "";
+            riskPctNum.textContent = "";
+            return;
+        }
+
+        // Set main status, icon, and color
         if (result.status === "safe") {
             statusHeader.textContent = "The link is safe!";
             statusHeader.style.color = "green";
             mainIcon.textContent = "🟢";
-        } else if (result.status === "might not be safe") {
-            statusHeader.textContent = "The link might not be safe!";
+        } else if (result.status === "caution") {
+            statusHeader.textContent = "The link may not be safe!";
             statusHeader.style.color = "orange";
             mainIcon.textContent = "🟠";
         } else {
@@ -44,25 +61,36 @@ document.addEventListener('DOMContentLoaded', function() {
             mainIcon.textContent = "🔴";
         }
 
-        // Friendly details for the user
+        // Visual risk bar and show percentage
+        riskBar.style.display = "block";
+        const pct = Math.min(Math.max(result.risk_pct, 0), 100); // clamp 0-100
+        let barColor = "#19c37d"; // green
+        if (pct >= 70) barColor = "#ff4545";
+        else if (pct >= 25) barColor = "#ffc107";
+        riskBar.style.background = `linear-gradient(to right, ${barColor} ${pct}%, #e2e6ea ${pct}%)`;
+        riskBar.innerHTML = ""; // Clear any text inside the bar
+        riskPctNum.textContent = pct + "%";
+        riskPctNum.style.color = barColor;
+
+        // Build details for the user
         let details = "";
-
-        if (result.status =="error") {
-            statusHeader.textContent = "Invalid link",
-                statusHeader.style.color = "red";
-            mainIcon.textContent = "⚠️",
-                detailsPara.innerHTML = result.message + "<br>Please provide the full link, like https://example.com";
-            return;
-        }
-
 
         // Main message
         if (result.status === "safe") {
             details += "🎉 This link looks safe.<br>";
-        } else if (result.status === "might not be safe") {
+        } else if (result.status === "caution") {
             details += "⚠️ Please be careful. Some things look suspicious.<br>";
         } else {
             details += "🚨 This link is dangerous. Do NOT enter personal information.<br>";
+        }
+
+        // Show reasons for score
+        if (result.reasons && result.reasons.length > 0) {
+            details += "<ul style='color:#b22222;'>";
+            for (const reason of result.reasons) {
+                details += `<li>${reason}</li>`;
+            }
+            details += "</ul>";
         }
 
         // HTTPS/HTTP info
@@ -113,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
             details += "ℹ️ This link uses 'www.' which is normal for many sites.<br>";
         }
 
-         // ===== WHOIS INFO =====
+        // ===== WHOIS INFO =====
         details += "<hr><strong>Domain Registration Info:</strong><br>";
         if (result.registrar) {
             details += `🌐 Registrar: ${result.registrar}<br>`;

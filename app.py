@@ -23,22 +23,60 @@ def check_ssl_certificate(url):
         print(f"Request error: {e}")
         return None #connection Error
 
-def get_domain_age(url):
+def get_domain_info(url):
     try:
-        extracted = tldextract.extract(url)
+        extracted = tldextract.extract(url) # Extract domain name from URL
         domain = f"{extracted.domain}.{extracted.suffix}"
-        domain_info = whois.whois(domain)
-        creation_date = domain_info.creation_date
+
+        domain_info = whois.whois(domain) #look up whois info
+
+#registrar extract
+        registrar = getattr(domain_info, "registrar", None)
+        if isinstance(registrar, list): # Sometimes it's a list
+            registrar = registrar[0] if registrar else None
+
+#country extract
+        country = getattr(domain_info, "country", None)
+        if isinstance(country, list):
+            country = country[0] if country else None
+
+#creation and expiration dates extract
+        creation_date = getattr(domain_info, 'creation_date', None)
+        expiration_date = getattr(domain_info, 'expiration_date', None)
+
         if isinstance(creation_date, list):
             creation_date = creation_date[0]
+        if isinstance(expiration_date, list):
+            expiration_date = expiration_date[0]
 #Calculation
         if creation_date:
             age = (datetime.now() - creation_date).days // 365 #get full years by dividing by 365
-            return age
-        return None
-    except Exception as e: #If anything at all fails above, just return None to avoid crashing
-        print(f"Domain age error: {e}")
-        return None
+        else:
+            age = None
+
+# Return all collected info as a dictionary
+        return {
+            "registrar": registrar,
+            "country": country,
+            "creation_date": str(creation_date) if creation_date else None,
+            "expiration_date": str(expiration_date) if expiration_date else None,
+            "age": age
+        }
+    except Exception as e:
+        print(f"Domain info error: {e}")
+    # If there is any error, return all fields as None
+    return {
+        "registrar": None,
+        "country": None,
+        "creation_date": None,
+        "expiration_date": None,
+        "age": None
+    }
+
+
+
+
+
 
 
 
@@ -60,11 +98,13 @@ def check_link():
     is_www_only = link.startswith('www.')
     is_www_protocol = '://www.' in link
     ssl_status = check_ssl_certificate(link)                # Check ssl certificate
-    domain_age = get_domain_age(link)                       # Get domain age, how old(years)
+    domain_info = get_domain_info(link)
+    domain_age = domain_info["age"]                       # Get domain age, how old(years)
     suspicious_keywords = ['login', 'verify', 'update', 'free', 'gift', 'security']
     keyword_hits = [word for word in suspicious_keywords if word in link]
     is_young = domain_age is not None and domain_age < 1
     is_ip = re.match(r'^https?://\d{1,3}(\.\d{1,3}){3}', link) is not None
+
 
 
     #SCORING ALGORITHM
@@ -131,6 +171,10 @@ def check_link():
         "young_domain": is_young,
         "is_ip_address": is_ip,
         "score": score,
+        "registrar": domain_info["registrar"],
+        "country": domain_info["country"],
+        "creation_date": domain_info["creation_date"],
+        "expiration_date": domain_info["expiration_date"],
     }
     return jsonify(response)  #sends the results back to the browser in a js format
 

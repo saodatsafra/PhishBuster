@@ -113,6 +113,32 @@ document.addEventListener('DOMContentLoaded', function() {
             details += "ℹ️ This link uses 'www.' which is normal for many sites.<br>";
         }
 
+         // ===== WHOIS INFO =====
+        details += "<hr><strong>Domain Registration Info:</strong><br>";
+        if (result.registrar) {
+            details += `🌐 Registrar: ${result.registrar}<br>`;
+        } else {
+            details += "🌐 Registrar: Unknown<br>";
+        }
+
+        if (result.country) {
+            details += `🏳️ Country: ${result.country}<br>`;
+        } else {
+            details += "🏳️ Country: Unknown<br>";
+        }
+
+        if (result.creation_date) {
+            details += `📅 Domain Created: ${result.creation_date}<br>`;
+        } else {
+            details += "📅 Domain Created: Unknown<br>";
+        }
+
+        if (result.expiration_date) {
+            details += `⏳ Domain Expires: ${result.expiration_date}<br>`;
+        } else {
+            details += "⏳ Domain Expires: Unknown<br>";
+        }
+
         detailsPara.innerHTML = details;
     });
 });

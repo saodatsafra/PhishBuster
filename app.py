@@ -103,8 +103,6 @@ def get_domain_info(url):
     }
 
 
-
-
 #------------------main check route--------------------#
 @app.route('/check_link', methods=['POST'])
 def check_link():

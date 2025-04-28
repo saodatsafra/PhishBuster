@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('link-form');
     const spinner = document.getElementById('spinner');
@@ -73,16 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (pct >= 70) barColor = "#ff4545";
         else if (pct >= 25) barColor = "#ffc107";
         riskBar.style.background = `linear-gradient(to right, ${barColor} ${pct}%, #e2e6ea ${pct}%)`;
-        riskBar.innerHTML = `<span style="
-            font-weight: bold;
-            font-size: 15px;
-            color: ${barColor};
-            padding-left: 7px;
-            position: absolute;
-            left: 7px;
-            top: 0;
-            line-height: 18px;
-        ">${pct}% Risk Score</span>`;
+        riskBar.innerHTML = "";
 
         // --- Section 1: Technical Summary ---
         let details = `<div style="font-size:1.08em; margin-bottom:11px;"><b>Technical Analysis Summary:</b> `;
